@@ -42,12 +42,8 @@ jobs:
         run: dotnet build --configuration Release
         working-directory: src/BFF/BffService
 
-      - name: Build Tests
-        run: dotnet build --configuration Release
-        working-directory: src/Tests/ECommerce.Tests
-
       - name: Run Unit Tests
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test --verbosity normal
         working-directory: src/Tests/ECommerce.Tests
 
   docker-build:
