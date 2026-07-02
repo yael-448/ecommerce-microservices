@@ -1,5 +1,7 @@
 # E-Commerce Microservices — Final Project
 
+[![CI/CD Pipeline](https://github.com/yael-448/ecommerce-microservices/actions/workflows/ci.yml/badge.svg)](https://github.com/yael-448/ecommerce-microservices/actions/workflows/ci.yml)
+
 A production-style distributed system demonstrating the journey from monolith to microservices.
 
 ## Quick Start
