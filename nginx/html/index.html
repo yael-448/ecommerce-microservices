@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>E-Commerce Demo UI</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>E-Commerce Demo</h1>
+    <p>Live demo UI — talks to the local API Gateway and services.</p>
+  </header>
+
+  <main>
+    <section id="products">
+      <h2>Products</h2>
+      <div id="product-list">Loading…</div>
+      <h3>Create product</h3>
+      <form id="create-product-form">
+        <input name="name" placeholder="Name" required />
+        <input name="price" placeholder="Price" type="number" step="0.01" required />
+        <input name="category" placeholder="Category" />
+        <button type="submit">Create</button>
+      </form>
+    </section>
+
+    <section id="orders">
+      <h2>Orders</h2>
+      <form id="create-order-form">
+        <input name="email" placeholder="Customer email" required />
+        <input name="productId" placeholder="Product ID" required />
+        <input name="qty" placeholder="Quantity" type="number" value="1" min="1" required />
+        <button type="submit">Place Order</button>
+      </form>
+      <div id="order-result"></div>
+    </section>
+  </main>
+
+  <footer>
+    <small>Logs and traces available in Seq (http://localhost:8081)</small>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

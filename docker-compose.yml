@@ -66,6 +66,8 @@ services:
     image: datalust/seq:latest
     environment:
       ACCEPT_EULA: "Y"
+      # First-run admin password for Seq (required to start). Change for production.
+      SEQ_FIRSTRUN_ADMINPASSWORD: "seqadmin123"
     ports:
       - "5341:5341"
       - "8081:80"
@@ -210,9 +212,11 @@ services:
       - "8080:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/html:/usr/share/nginx/html:ro
     depends_on:
       - product-catalog-1
       - product-catalog-2
+      - api-gateway
 
 volumes:
   orders_db_data:

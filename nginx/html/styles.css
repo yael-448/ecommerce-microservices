@@ -1,0 +1,8 @@
+body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:#f6f9fb;color:#102a43}
+header{background:#0b6efd;color:white;padding:18px}
+main{padding:20px;display:flex;gap:24px}
+section{background:white;padding:16px;border-radius:8px;box-shadow:0 1px 4px rgba(2,6,23,.08);flex:1}
+.product{padding:8px;border-bottom:1px solid #eee}
+form input{display:block;margin:6px 0;padding:8px;width:100%}
+button{background:#0b6efd;color:white;border:none;padding:8px 12px;border-radius:6px}
+footer{padding:12px;text-align:center;color:#7b8794}
