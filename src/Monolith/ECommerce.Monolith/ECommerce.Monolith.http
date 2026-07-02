@@ -1,0 +1,6 @@
+@ECommerce.Monolith_HostAddress = http://localhost:5144
+
+GET {{ECommerce.Monolith_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

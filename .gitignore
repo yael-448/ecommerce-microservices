@@ -1,0 +1,18 @@
+# .NET build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Environment files
+.env
+*.env.local
+
+# Docker volumes
+postgres_data/
+mongo_data/
+
+# OS files
+.DS_Store
+Thumbs.db

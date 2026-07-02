@@ -1,0 +1,71 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build OrderService
+        run: dotnet build --configuration Release
+        working-directory: src/Services/OrderService/OrderService
+
+      - name: Build ProductCatalogService
+        run: dotnet build --configuration Release
+        working-directory: src/Services/ProductCatalogService/ProductCatalogService
+
+      - name: Build InventoryService
+        run: dotnet build --configuration Release
+        working-directory: src/Services/InventoryService/InventoryService
+
+      - name: Build NotificationService
+        run: dotnet build --configuration Release
+        working-directory: src/Services/NotificationService/NotificationService
+
+      - name: Build ApiGateway
+        run: dotnet build --configuration Release
+        working-directory: src/ApiGateway/ApiGateway
+
+      - name: Build BFF
+        run: dotnet build --configuration Release
+        working-directory: src/BFF/BffService
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: |
+          docker build -t order-service:${{ github.sha }} ./src/Services/OrderService/OrderService
+          docker build -t product-catalog-service:${{ github.sha }} ./src/Services/ProductCatalogService/ProductCatalogService
+          docker build -t inventory-service:${{ github.sha }} ./src/Services/InventoryService/InventoryService
+          docker build -t notification-service:${{ github.sha }} ./src/Services/NotificationService/NotificationService
+          docker build -t api-gateway:${{ github.sha }} ./src/ApiGateway/ApiGateway
+          docker build -t bff-service:${{ github.sha }} ./src/BFF/BffService
+
+      - name: Smoke Test - Docker Compose Up
+        run: |
+          docker compose up -d --build
+          echo "Waiting for services to start..."
+          sleep 30
+          
+          # Check health endpoints
+          curl -f http://localhost:5000/health || exit 1
+          echo "Gateway is healthy!"
+          
+          docker compose down
