@@ -47,12 +47,37 @@ document.getElementById('create-product-form').addEventListener('submit', async 
       body: JSON.stringify(data)
     });
     alert('Created product id: ' + (created.id || created._id || created.productId || 'unknown'));
+    // if user provided initial stock, set it in InventoryService via the gateway
+    try {
+      const stockInput = parseInt(data.stock || 0, 10);
+      const prodId = created.id || created._id || created.productId;
+      if (prodId && stockInput > 0) {
+        await fetchJSON('/api/inventory', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ productId: prodId, quantity: stockInput })
+        });
+        console.info('Set initial stock', prodId, stockInput);
+      }
+    } catch (ie) {
+      console.warn('Set stock failed', ie);
+    }
     ev.target.reset();
     await loadProducts();
   } catch(e) {
     alert('Create failed: ' + e.message);
   }
 });
+
+// Refresh notifications button handler
+const refreshBtn = document.createElement('button');
+refreshBtn.type = 'button';
+refreshBtn.innerText = 'Refresh notifications';
+refreshBtn.addEventListener('click', () => {
+  const email = document.querySelector('input[name="email"]')?.value;
+  if (email) fetchNotifications(email);
+});
+document.getElementById('notifications-list').before(refreshBtn);
 
 document.getElementById('create-order-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
