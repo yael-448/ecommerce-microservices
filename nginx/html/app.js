@@ -79,6 +79,11 @@ refreshBtn.addEventListener('click', () => {
 });
 document.getElementById('notifications-list').before(refreshBtn);
 
+const notificationsStatus = document.createElement('div');
+notificationsStatus.id = 'notifications-status';
+notificationsStatus.innerText = '(no messages yet)';
+document.getElementById('notifications-list').before(notificationsStatus);
+
 // Create order form handler (cleaned, starts polling and shows timeline/notifications)
 document.getElementById('create-order-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
@@ -107,6 +112,10 @@ document.getElementById('create-order-form').addEventListener('submit', async (e
     const correlation = order.correlationId || order.correlation || null;
     document.getElementById('order-result').innerText = 'Order created: ' + (orderId || JSON.stringify(order)) + (correlation ? ' · correlationId: ' + correlation : '');
 
+    if (f.email) {
+      notificationsStatus.innerText = 'Waiting for order result...';
+      fetchNotifications(f.email);
+    }
     if (orderId) startOrderPoll(orderId, f.email, correlation);
     ev.target.reset();
   } catch(e) {
@@ -129,16 +138,27 @@ function addTimelineEntry(text) {
 async function fetchNotifications(email) {
   try {
     const list = document.getElementById('notifications-list');
+    notificationsStatus.innerText = 'Loading notifications...';
     list.innerText = 'Loading...';
     const url = '/api/notifications/' + encodeURIComponent(email);
     const msgs = await fetchJSON(url);
     if (!msgs || msgs.length === 0) {
       list.innerText = '(no messages)';
+      notificationsStatus.innerText = 'No notifications for ' + email;
       return;
     }
-    list.innerHTML = msgs.map(m => `<div class="note">${m}</div>`).join('');
+    list.innerHTML = msgs.map((m) => {
+      try {
+        const parsed = JSON.parse(m);
+        return `<div class="note"><b>${parsed.Type}</b>: ${parsed.Message}<br><small>${parsed.Timestamp}</small></div>`;
+      } catch {
+        return `<div class="note">${m}</div>`;
+      }
+    }).join('');
+    notificationsStatus.innerText = 'Showing ' + msgs.length + ' notification(s) for ' + email;
   } catch (e) {
     console.warn('notifications fetch failed', e);
+    notificationsStatus.innerText = 'Notifications load failed';
   }
 }
 
