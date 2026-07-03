@@ -79,20 +79,42 @@ refreshBtn.addEventListener('click', () => {
 });
 document.getElementById('notifications-list').before(refreshBtn);
 
+// Create order form handler (cleaned, starts polling and shows timeline/notifications)
 document.getElementById('create-order-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
-    const orderId = order.id || order.orderId || (order.order && order.order.id) || null;
-    const correlation = order.correlationId || order.correlation || null;
-    document.getElementById('order-result').innerText = 'Order created: ' + (orderId || JSON.stringify(order)) + (correlation ? ' · correlationId: ' + correlation : '');
-    // start polling order status and show timeline + notifications
-    if (orderId) startOrderPoll(orderId, f.email, correlation);
+  const f = Object.fromEntries(new FormData(ev.target));
   const selected = productsCache.find(p => (p.id || p._id || p.productId) === f.productId);
   const payload = {
     customerEmail: f.email,
     items: [
       {
         productId: f.productId,
+        productName: selected?.name || 'Unknown product',
+        quantity: parseInt(f.qty, 10),
+        unitPrice: selected?.price || 0
+      }
+    ]
+  };
 
+  try {
+    const order = await fetchJSON('/api/orders', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    const orderId = order.id || order.orderId || (order.order && order.order.id) || null;
+    const correlation = order.correlationId || order.correlation || null;
+    document.getElementById('order-result').innerText = 'Order created: ' + (orderId || JSON.stringify(order)) + (correlation ? ' · correlationId: ' + correlation : '');
+
+    if (orderId) startOrderPoll(orderId, f.email, correlation);
+    ev.target.reset();
+  } catch(e) {
+    document.getElementById('order-result').innerText = 'Order failed: ' + e.message;
+  }
+});
+
+// timeline helper
 function addTimelineEntry(text) {
   const container = document.getElementById('order-timeline');
   if (!container) return;
@@ -103,6 +125,7 @@ function addTimelineEntry(text) {
   ul.prepend(li);
 }
 
+// fetch notifications for email
 async function fetchNotifications(email) {
   try {
     const list = document.getElementById('notifications-list');
@@ -119,6 +142,7 @@ async function fetchNotifications(email) {
   }
 }
 
+// poll order status until final and fetch notifications
 async function startOrderPoll(orderId, email, correlationId) {
   addTimelineEntry('Order placed (id: ' + orderId + ')');
   if (correlationId) addTimelineEntry('Correlation: ' + correlationId);
@@ -142,28 +166,9 @@ async function startOrderPoll(orderId, email, correlationId) {
         }
       }
     } catch (e) {
-      // ignore transient errors while polling
       console.debug('poll error', e.message || e);
     }
   }, 1500);
 }
-        productName: selected?.name || 'Unknown product',
-        quantity: parseInt(f.qty, 10),
-        unitPrice: selected?.price || 0
-      }
-    ]
-  };
-  try {
-    const order = await fetchJSON('/api/orders', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
-    });
-    document.getElementById('order-result').innerText = 'Order created: ' + (order.id || order.orderId || JSON.stringify(order));
-    ev.target.reset();
-  } catch(e) {
-    document.getElementById('order-result').innerText = 'Order failed: ' + e.message;
-  }
-});
 
 loadProducts();
