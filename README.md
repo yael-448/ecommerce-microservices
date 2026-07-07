@@ -10,6 +10,18 @@ A production-style distributed system demonstrating the journey from monolith to
 docker compose up --build
 ```
 
+The SPA will be served by Nginx at: http://localhost:8080
+The API Gateway (YARP) will be reachable at: http://localhost:5000
+Seq (logs UI): http://localhost:8081
+RabbitMQ management UI: http://localhost:15672 (guest/guest)
+
+To inspect Postgres databases from the host (example using docker, run after compose up):
+```bash
+docker compose exec orders-db psql -U postgres -d orders
+docker compose exec inventory-db psql -U postgres -d inventory
+```
+Or use any Postgres client pointing at the container host/port when port-forwarding is configured.
+
 ## Architecture
 
 - **API Gateway (YARP)** — Port 5000 (all client traffic enters here)
@@ -69,6 +81,7 @@ curl http://localhost:5000/bff/order-details/<ORDER_ID>
 ```bash
 curl http://localhost:5000/api/products/health
 ```
+The SPA also includes a small "Probe" that calls `/api/products/health` multiple times and shows which container IDs responded — use it to demonstrate round-robin behavior.
 
 ## Demonstrating the Compensation Path
 

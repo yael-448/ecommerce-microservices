@@ -29,6 +29,8 @@ async function loadProducts() {
       const id = p.id || p._id || p.productId;
       return `<option value="${id}">${p.name} — $${p.price} (${id})</option>`;
     }).join('');
+
+    await loadSelectedInventory();
   } catch(e) {
     list.innerText = 'Error loading products: ' + e.message;
     document.getElementById('product-select').innerHTML = '<option value="">Error loading</option>';
@@ -46,7 +48,10 @@ document.getElementById('create-product-form').addEventListener('submit', async 
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
-    alert('Created product id: ' + (created.id || created._id || created.productId || 'unknown'));
+    const newProductId = created.id || created._id || created.productId || 'unknown';
+    const productResult = document.getElementById('product-result');
+    productResult.innerText = 'Product created: ' + newProductId;
+
     // if user provided initial stock, set it in InventoryService via the gateway
     try {
       const stockInput = parseInt(data.stock || 0, 10);
@@ -57,9 +62,11 @@ document.getElementById('create-product-form').addEventListener('submit', async 
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ productId: prodId, quantity: stockInput })
         });
+        productResult.innerText = 'Product created and initial stock set to ' + stockInput + ' for product ' + newProductId;
         console.info('Set initial stock', prodId, stockInput);
       }
     } catch (ie) {
+      document.getElementById('product-result').innerText = 'Product created, but initial stock update failed: ' + ie.message;
       console.warn('Set stock failed', ie);
     }
     ev.target.reset();
@@ -79,10 +86,11 @@ refreshBtn.addEventListener('click', () => {
 });
 document.getElementById('notifications-list').before(refreshBtn);
 
-const notificationsStatus = document.createElement('div');
-notificationsStatus.id = 'notifications-status';
-notificationsStatus.innerText = '(no messages yet)';
-document.getElementById('notifications-list').before(notificationsStatus);
+const notificationsStatus = document.getElementById('notifications-status');
+const inventoryStatus = document.getElementById('inventory-status');
+let currentInventory = null;
+const productSelect = document.getElementById('product-select');
+productSelect.addEventListener('change', () => loadSelectedInventory());
 
 // Create order form handler (cleaned, starts polling and shows timeline/notifications)
 document.getElementById('create-order-form').addEventListener('submit', async (ev) => {
@@ -110,7 +118,7 @@ document.getElementById('create-order-form').addEventListener('submit', async (e
 
     const orderId = order.id || order.orderId || (order.order && order.order.id) || null;
     const correlation = order.correlationId || order.correlation || null;
-    document.getElementById('order-result').innerText = 'Order created: ' + (orderId || JSON.stringify(order)) + (correlation ? ' · correlationId: ' + correlation : '');
+    document.getElementById('order-result').innerText = 'Order created: ' + (orderId || JSON.stringify(order)) + (correlation ? ' · correlationId: ' + correlation : '') + '. Waiting for final status...';
 
     if (f.email) {
       notificationsStatus.innerText = 'Waiting for order result...';
@@ -162,6 +170,58 @@ async function fetchNotifications(email) {
   }
 }
 
+// BFF fetch helper — show order details JSON
+document.getElementById('bff-fetch')?.addEventListener('click', async () => {
+  const id = document.getElementById('bff-order-id').value?.trim();
+  const out = document.getElementById('bff-result');
+  if (!id) { out.innerText = 'Enter an order id'; return; }
+  try {
+    out.innerText = 'Loading...';
+    const details = await fetchJSON('/bff/order-details/' + id);
+    out.innerText = JSON.stringify(details, null, 2);
+  } catch (e) {
+    out.innerText = 'Failed: ' + (e.message || e);
+  }
+});
+
+// Load-balancer probe: call /api/products/health multiple times and collect instance identifiers
+document.getElementById('lb-probe')?.addEventListener('click', async () => {
+  const out = document.getElementById('lb-results');
+  out.innerText = 'Probing...';
+  const counts = {};
+  const attempts = 8;
+  for (let i=0;i<attempts;i++){
+    try{
+      const res = await fetch('/api/products/health');
+      // try header first
+      let inst = res.headers.get('X-Instance-Id');
+      if (!inst) {
+        try{ const body = await res.json(); inst = body.ContainerId || body.containerId || body.Container || 'unknown'; }catch{ inst = 'unknown'; }
+      }
+      counts[inst] = (counts[inst]||0) + 1;
+    }catch(e){ counts['error']=(counts['error']||0)+1 }
+  }
+  out.innerText = Object.entries(counts).map(([k,v]) => `${k}: ${v}`).join('\n');
+});
+
+async function loadSelectedInventory() {
+  const selectedId = productSelect.value;
+  if (!selectedId) {
+    inventoryStatus.innerText = 'Inventory: no product selected';
+    currentInventory = null;
+    return;
+  }
+
+  try {
+    const data = await fetchJSON('/api/inventory/' + selectedId);
+    currentInventory = data;
+    inventoryStatus.innerText = 'Inventory available: ' + data.quantity;
+  } catch (e) {
+    inventoryStatus.innerText = 'Inventory available: 0';
+    currentInventory = { productId: selectedId, quantity: 0 };
+  }
+}
+
 // poll order status until final and fetch notifications
 async function startOrderPoll(orderId, email, correlationId) {
   addTimelineEntry('Order placed (id: ' + orderId + ')');
@@ -181,7 +241,8 @@ async function startOrderPoll(orderId, email, correlationId) {
         addTimelineEntry('Status: ' + statusText);
         if (status !== 0 && status !== '0') {
           clearInterval(iv);
-          // fetch notifications for this email
+          document.getElementById('order-result').innerText = 'Order ' + orderId + ' ' + statusText;
+          await loadSelectedInventory();
           if (email) fetchNotifications(email);
         }
       }

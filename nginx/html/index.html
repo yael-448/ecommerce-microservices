@@ -13,35 +13,75 @@
   </header>
 
   <main>
-    <section id="products">
-      <h2>Products</h2>
-      <div id="product-list">Loading…</div>
-      <h3>Create product</h3>
-      <form id="create-product-form">
-        <input name="name" placeholder="Name" required />
-        <input name="description" placeholder="Description" required />
-        <input name="price" placeholder="Price" type="number" step="0.01" required />
-        <input name="stock" placeholder="Initial stock (optional)" type="number" min="0" />
-        <input name="category" placeholder="Category" />
-        <button type="submit">Create</button>
-      </form>
-    </section>
+    <div class="grid">
+      <div>
+        <section id="products" class="card">
+          <h2>Products</h2>
+          <div id="product-list">Loading…</div>
+          <h3>Create product</h3>
+          <form id="create-product-form" class="controls">
+            <input name="name" placeholder="Name" required />
+            <input name="description" placeholder="Description" required />
+            <input name="price" placeholder="Price" type="number" step="0.01" required />
+            <input name="stock" placeholder="Initial stock (optional)" type="number" min="0" />
+            <input name="category" placeholder="Category" />
+            <button type="submit">Create</button>
+          </form>
+          <div id="product-result"></div>
+        </section>
 
-    <section id="orders">
-      <h2>Orders</h2>
-      <div id="order-product-selector">Loading products…</div>
-      <form id="create-order-form">
-        <input name="email" placeholder="Customer email" required />
-        <select name="productId" id="product-select" required></select>
-        <input name="qty" placeholder="Quantity" type="number" value="1" min="1" required />
-        <button type="submit">Place Order</button>
-      </form>
-      <div id="order-result"></div>
-      <div id="order-timeline"></div>
-      <h3>Notifications</h3>
-      <div id="notifications-status">(no messages yet)</div>
-      <div id="notifications-list">(no messages yet)</div>
-    </section>
+        <section id="orders" class="card" style="margin-top:20px">
+          <h2>הזמנה — Place order</h2>
+          <div id="order-product-selector">Loading products…</div>
+          <form id="create-order-form" class="controls">
+            <input name="email" placeholder="Customer email" required />
+            <select name="productId" id="product-select" required></select>
+            <input name="qty" placeholder="Quantity" type="number" value="1" min="1" required />
+            <button type="submit">Place Order</button>
+          </form>
+          <div id="inventory-status">Inventory: loading...</div>
+          <div id="order-result"></div>
+          <div id="order-id-display" style="margin-top:12px; padding:12px; background:rgba(46,204,113,0.1); border:1px solid var(--accent); border-radius:8px; display:none">
+            <div class="small" style="color:var(--text-muted); margin-bottom:4px">Order ID:</div>
+            <div id="order-id-value" style="font-family:monospace; word-break:break-all; cursor:pointer; user-select:all"></div>
+          </div>
+          <div id="order-timeline"></div>
+
+          <h3>Notifications</h3>
+          <div id="notifications-status" class="small">(no messages yet)</div>
+          <div id="notifications-list">(no messages yet)</div>
+        </section>
+      </div>
+
+      <aside>
+        <div class="card">
+          <h3>BFF — Order details</h3>
+          <div class="controls">
+            <input id="bff-order-id" placeholder="Order id (GUID)" style="flex:1" />
+            <button id="bff-fetch">Fetch</button>
+          </div>
+          <div id="bff-result" class="small">(enter order id and click Fetch)</div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>Load balancing — ProductCatalog</h3>
+          <div class="controls">
+            <button id="lb-probe">Probe 8 times</button>
+          </div>
+          <div id="lb-results" class="small">(no probes yet)</div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>Quick links</h3>
+          <div class="small">
+            <div><a href="http://localhost:8080" target="_blank">SPA (Nginx)</a></div>
+            <div><a href="http://localhost:5000" target="_blank">API Gateway (YARP)</a></div>
+            <div><a href="http://localhost:8081" target="_blank">Seq (logs)</a></div>
+            <div><a href="http://localhost:15672" target="_blank">RabbitMQ (management)</a></div>
+          </div>
+        </div>
+      </aside>
+    </div>
   </main>
 
   <footer>
